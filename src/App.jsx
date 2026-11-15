@@ -43,14 +43,14 @@ const INITIAL_FALLBACK_POSITIONS = [
 ];
 
 const INITIAL_FALLBACK_HISTORY = [
-  { id: 'H001', date: '2026-11-08', symbol: 'GBPUSD', type: 'SELL', volume: 0.1, openPrice: 1.265, closePrice: 1.261, profit: 40, digits: 5 },
-  { id: 'H002', date: '2026-11-07', symbol: 'USDJPY', type: 'BUY', volume: 0.05, openPrice: 150.2, closePrice: 150.0, profit: -10.5, digits: 3 },
-  { id: 'H003', date: '2026-11-05', symbol: 'EURUSD', type: 'BUY', volume: 0.2, openPrice: 1.08, closePrice: 1.085, profit: 100, digits: 5 },
-  { id: 'H004', date: '2026-10-28', symbol: 'XAUUSD', type: 'SELL', volume: 0.05, openPrice: 2020.5, closePrice: 2010.0, profit: 52.5, digits: 2 },
-  { id: 'H005', date: '2026-10-25', symbol: 'EURUSD', type: 'BUY', volume: 0.1, openPrice: 1.082, closePrice: 1.08, profit: -20, digits: 5 },
-  { id: 'H006', date: '2026-11-01', symbol: 'XAUUSD', type: 'BUY', volume: 0.05, openPrice: 2000.0, closePrice: 2005.0, profit: 25, digits: 2 },
-  { id: 'H007', date: '2026-11-02', symbol: 'EURUSD', type: 'SELL', volume: 0.1, openPrice: 1.09, closePrice: 1.092, profit: -20, digits: 5 },
-  { id: 'H008', date: '2026-11-03', symbol: 'GBPUSD', type: 'BUY', volume: 0.1, openPrice: 1.26, closePrice: 1.265, profit: 50, digits: 5 },
+  { id: 'H001', date: '2026-11-08', closingTime: '18:42:15', symbol: 'GBPUSD', type: 'SELL', volume: 0.1, openPrice: 1.265, closePrice: 1.261, profit: 40, digits: 5 },
+  { id: 'H002', date: '2026-11-07', closingTime: '15:10:04', symbol: 'USDJPY', type: 'BUY', volume: 0.05, openPrice: 150.2, closePrice: 150.0, profit: -10.5, digits: 3 },
+  { id: 'H003', date: '2026-11-05', closingTime: '20:05:31', symbol: 'EURUSD', type: 'BUY', volume: 0.2, openPrice: 1.08, closePrice: 1.085, profit: 100, digits: 5 },
+  { id: 'H004', date: '2026-10-28', closingTime: '19:33:50', symbol: 'XAUUSD', type: 'SELL', volume: 0.05, openPrice: 2020.5, closePrice: 2010.0, profit: 52.5, digits: 2 },
+  { id: 'H005', date: '2026-10-25', closingTime: '11:22:18', symbol: 'EURUSD', type: 'BUY', volume: 0.1, openPrice: 1.082, closePrice: 1.08, profit: -20, digits: 5 },
+  { id: 'H006', date: '2026-11-01', closingTime: '14:15:09', symbol: 'XAUUSD', type: 'BUY', volume: 0.05, openPrice: 2000.0, closePrice: 2005.0, profit: 25, digits: 2 },
+  { id: 'H007', date: '2026-11-02', closingTime: '16:48:22', symbol: 'EURUSD', type: 'SELL', volume: 0.1, openPrice: 1.09, closePrice: 1.092, profit: -20, digits: 5 },
+  { id: 'H008', date: '2026-11-03', closingTime: '21:12:44', symbol: 'GBPUSD', type: 'BUY', volume: 0.1, openPrice: 1.26, closePrice: 1.265, profit: 50, digits: 5 },
 ];
 
 const INITIAL_LOGS = [
@@ -1002,6 +1002,7 @@ const Dashboard = () => {
               <thead>
                 <tr className="text-gray-400 text-sm border-b border-white/10">
                   <th className="pb-3 font-medium">Date</th>
+                  <th className="pb-3 font-medium">Closing Time (UTC+7)</th>
                   <th className="pb-3 font-medium">Symbol</th>
                   <th className="pb-3 font-medium">Type</th>
                   <th className="pb-3 font-medium">Volume</th>
@@ -1013,7 +1014,7 @@ const Dashboard = () => {
               <tbody className="text-sm">
                 {filteredHistory.length > 0 && (
                   <tr className="border-b border-white/10 bg-white/5 font-semibold">
-                    <td colSpan="6" className="py-3 text-right text-gray-300">
+                    <td colSpan="7" className="py-3 text-right text-gray-300">
                       Summary Profit / Loss:
                     </td>
                     <td
@@ -1036,6 +1037,9 @@ const Dashboard = () => {
                       className="border-b border-white/5 hover:bg-white/5 transition-colors text-gray-300"
                     >
                       <td className="py-4 font-medium">{trade.date}</td>
+                      <td className="py-4 font-mono text-gray-400">
+                        {trade.closingTime || '-'}
+                      </td>
                       <td className="py-4 font-medium">{trade.symbol}</td>
                       <td className="py-4">
                         <span
@@ -1066,7 +1070,7 @@ const Dashboard = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" className="py-8 text-center text-gray-500">
+                    <td colSpan="8" className="py-8 text-center text-gray-500">
                       No trades found for the selected date range.
                     </td>
                   </tr>

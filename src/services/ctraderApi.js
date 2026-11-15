@@ -44,11 +44,19 @@ function formatSyncTime() {
 }
 
 function formatDateYYYYMMDD(timestamp) {
-  const dt = new Date(timestamp);
-  const y = dt.getFullYear();
-  const m = String(dt.getMonth() + 1).padStart(2, '0');
-  const d = String(dt.getDate()).padStart(2, '0');
+  const utc7 = new Date(Number(timestamp) + 7 * 60 * 60 * 1000);
+  const y = utc7.getUTCFullYear();
+  const m = String(utc7.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(utc7.getUTCDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
+}
+
+function formatClosingTimeUTC7(timestamp) {
+  const utc7 = new Date(Number(timestamp) + 7 * 60 * 60 * 1000);
+  const hh = String(utc7.getUTCHours()).padStart(2, '0');
+  const mm = String(utc7.getUTCMinutes()).padStart(2, '0');
+  const ss = String(utc7.getUTCSeconds()).padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
 }
 
 export class CTraderSocketManager {
@@ -631,6 +639,7 @@ export class CTraderSocketManager {
           return {
             id: String(d.dealId),
             date: formatDateYYYYMMDD(ts),
+            closingTime: formatClosingTimeUTC7(ts),
             timestamp: ts,
             symbol: symInfo.symbolName,
             type: dealSide,
