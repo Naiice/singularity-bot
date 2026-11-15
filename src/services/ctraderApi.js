@@ -175,6 +175,7 @@ export class CTraderSocketManager {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(
         JSON.stringify({
+          clientMsgId: `hb_${this.msgCounter++}`,
           payloadType: PAYLOAD_TYPE.HEARTBEAT_EVENT,
           payload: {},
         })

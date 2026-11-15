@@ -319,12 +319,74 @@ const Dashboard = () => {
     return map;
   }, [tradeHistory]);
 
+  // Build weekly rows (Sun-Sat + 8th column for Weekly Summary) and Monthly Total
+  const { calendarWeeks, monthlySummary } = useMemo(() => {
+    const totalSlots = firstDayOfMonth + daysInMonth;
+    const numWeeks = Math.ceil(totalSlots / 7);
+    const weeks = [];
+    let monthTotalPnl = 0;
+    let monthWinDays = 0;
+    let monthLossDays = 0;
+    let monthTradedDays = 0;
+
+    for (let w = 0; w < numWeeks; w++) {
+      const days = [];
+      let weekTotal = 0;
+      let weekTradedDays = 0;
+
+      for (let dow = 0; dow < 7; dow++) {
+        const slotIdx = w * 7 + dow;
+        const dayNum = slotIdx - firstDayOfMonth + 1;
+        if (dayNum < 1 || dayNum > daysInMonth) {
+          days.push({ isEmpty: true, key: `empty-${w}-${dow}` });
+        } else {
+          const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(
+            2,
+            '0'
+          )}-${String(dayNum).padStart(2, '0')}`;
+          const pnl = dailyPerformance[dateKey];
+          if (pnl !== undefined) {
+            weekTotal += pnl;
+            weekTradedDays += 1;
+            monthTotalPnl += pnl;
+            monthTradedDays += 1;
+            if (pnl >= 0) monthWinDays += 1;
+            else monthLossDays += 1;
+          }
+          days.push({
+            isEmpty: false,
+            day: dayNum,
+            dateKey,
+            pnl,
+          });
+        }
+      }
+
+      weeks.push({
+        weekNum: w + 1,
+        days,
+        weekTotal,
+        tradedDays: weekTradedDays,
+      });
+    }
+
+    return {
+      calendarWeeks: weeks,
+      monthlySummary: {
+        totalPnl: monthTotalPnl,
+        winDays: monthWinDays,
+        lossDays: monthLossDays,
+        tradedDays: monthTradedDays,
+      },
+    };
+  }, [firstDayOfMonth, daysInMonth, currentYear, currentMonth, dailyPerformance]);
+
   const isConnected = systemStatus.state === 'authenticated';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black text-white p-6 font-sans">
+    <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 via-slate-900 to-black text-white p-4 lg:p-6 font-sans">
       {/* Header */}
-      <header className="max-w-7xl mx-auto mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <header className="w-full mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
             A.Singularity Trading
@@ -434,7 +496,7 @@ const Dashboard = () => {
 
       {/* Error Banner */}
       {errorBanner && (
-        <div className="max-w-7xl mx-auto mb-6 bg-red-500/15 border border-red-500/40 text-red-200 px-5 py-3 rounded-2xl flex justify-between items-center text-xs">
+        <div className="w-full mb-6 bg-red-500/15 border border-red-500/40 text-red-200 px-5 py-3 rounded-2xl flex justify-between items-center text-xs">
           <span>⚠️ {errorBanner}</span>
           <button
             onClick={() => setErrorBanner('')}
@@ -548,7 +610,7 @@ const Dashboard = () => {
       )}
 
       {/* Main Grid */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-6">
+      <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-6">
         {/* LEFT COLUMN (3 cols): System Telemetry, Statistics, Currency Converter */}
         <div className="md:col-span-3 space-y-6">
           {/* 1. System Telemetry */}
@@ -1091,7 +1153,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <div className="grid grid-cols-8 gap-2 mb-2 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">
               <div>Sun</div>
               <div>Mon</div>
               <div>Tue</div>
@@ -1099,40 +1161,142 @@ const Dashboard = () => {
               <div>Thu</div>
               <div>Fri</div>
               <div>Sat</div>
+              <div className="text-blue-400">Weekly</div>
             </div>
 
-            <div className="grid grid-cols-7 gap-2">
-              {Array.from({ length: firstDayOfMonth }).map((_, idx) => (
-                <div key={`empty-${idx}`} className="p-2 h-20 sm:h-24" />
-              ))}
-              {Array.from({ length: daysInMonth }).map((_, idx) => {
-                const day = idx + 1;
-                const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(
-                  2,
-                  '0'
-                )}-${String(day).padStart(2, '0')}`;
-                const pnl = dailyPerformance[dateKey];
-
-                return (
-                  <div
-                    key={day}
-                    className="bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all rounded-xl p-2 h-20 sm:h-24 flex flex-col justify-between group"
-                  >
-                    <span className="text-xs text-gray-500 font-mono group-hover:text-gray-300">
-                      {day}
-                    </span>
-                    {pnl !== undefined && (
-                      <span
-                        className={`text-sm sm:text-base font-bold font-mono text-right ${
-                          pnl >= 0 ? 'text-emerald-400' : 'text-red-400'
-                        }`}
+            <div className="space-y-2">
+              {calendarWeeks.map((week) => (
+                <div key={`week-${week.weekNum}`} className="grid grid-cols-8 gap-2">
+                  {week.days.map((cell) => {
+                    if (cell.isEmpty) {
+                      return (
+                        <div
+                          key={cell.key}
+                          className="p-2 h-20 sm:h-24 rounded-xl bg-black/15 border border-white/[0.02]"
+                        />
+                      );
+                    }
+                    return (
+                      <div
+                        key={cell.day}
+                        className="bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all rounded-xl p-2 h-20 sm:h-24 flex flex-col justify-between group"
                       >
-                        {pnl > 0 ? '+' : ''}${pnl.toFixed(2)}
+                        <span className="text-xs text-gray-500 font-mono group-hover:text-gray-300">
+                          {cell.day}
+                        </span>
+                        {cell.pnl !== undefined && (
+                          <span
+                            className={`text-xs sm:text-sm lg:text-base font-bold font-mono text-right ${
+                              cell.pnl >= 0 ? 'text-emerald-400' : 'text-red-400'
+                            }`}
+                          >
+                            {cell.pnl > 0 ? '+' : ''}${cell.pnl.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* 8th Column: Weekly Summary Card */}
+                  <div
+                    className={`rounded-xl p-2 h-20 sm:h-24 flex flex-col justify-between border transition-all ${
+                      week.tradedDays === 0
+                        ? 'bg-white/[0.03] border-white/10'
+                        : week.weekTotal >= 0
+                        ? 'bg-emerald-500/10 border-emerald-500/30'
+                        : 'bg-red-500/10 border-red-500/30'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] font-semibold text-blue-300 font-mono">
+                        W{week.weekNum}
                       </span>
-                    )}
+                      {week.tradedDays > 0 && (
+                        <span className="text-[10px] text-gray-400 font-mono">
+                          {week.tradedDays}d
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      className={`text-xs sm:text-sm lg:text-base font-bold font-mono text-right ${
+                        week.tradedDays === 0
+                          ? 'text-gray-500'
+                          : week.weekTotal >= 0
+                          ? 'text-emerald-400'
+                          : 'text-red-400'
+                      }`}
+                    >
+                      {week.tradedDays === 0
+                        ? '$0.00'
+                        : `${week.weekTotal > 0 ? '+' : ''}$${week.weekTotal.toFixed(2)}`}
+                    </span>
                   </div>
-                );
-              })}
+                </div>
+              ))}
+            </div>
+
+            {/* Bottom Row: Monthly Summary Total */}
+            <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-1 sm:grid-cols-8 gap-2 items-center">
+              <div className="sm:col-span-7 flex flex-wrap items-center justify-between gap-3 bg-black/25 border border-white/5 rounded-xl px-4 py-3 text-xs">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-gray-300 font-semibold">
+                    สรุปผลประจำเดือน {MONTH_NAMES[currentMonth]} {currentYear}:
+                  </span>
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${
+                      monthlySummary.tradedDays === 0
+                        ? 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                        : monthlySummary.totalPnl >= 0
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                        : 'bg-red-500/20 text-red-300 border-red-500/40'
+                    }`}
+                  >
+                    {monthlySummary.tradedDays === 0
+                      ? 'NO TRADES'
+                      : monthlySummary.totalPnl >= 0
+                      ? '🟢 กำไร (PROFIT)'
+                      : '🔴 ขาดทุน (LOSS)'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-4 text-gray-400 font-mono">
+                  <span>
+                    วันกำไร: <strong className="text-emerald-400">{monthlySummary.winDays}</strong>
+                  </span>
+                  <span>
+                    วันขาดทุน: <strong className="text-red-400">{monthlySummary.lossDays}</strong>
+                  </span>
+                  <span>
+                    รวมวันที่เทรด: <strong className="text-white">{monthlySummary.tradedDays}</strong>
+                  </span>
+                </div>
+              </div>
+
+              {/* Bottom-Right Box aligned with Weekly Summary Column */}
+              <div
+                className={`sm:col-span-1 rounded-xl px-3 py-2.5 border flex flex-col justify-between ${
+                  monthlySummary.tradedDays === 0
+                    ? 'bg-white/5 border-white/10'
+                    : monthlySummary.totalPnl >= 0
+                    ? 'bg-emerald-500/15 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+                    : 'bg-red-500/15 border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.15)]'
+                }`}
+              >
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-300">
+                  Monthly Total
+                </span>
+                <span
+                  className={`text-sm lg:text-base font-extrabold font-mono text-right mt-0.5 ${
+                    monthlySummary.tradedDays === 0
+                      ? 'text-gray-400'
+                      : monthlySummary.totalPnl >= 0
+                      ? 'text-emerald-400'
+                      : 'text-red-400'
+                  }`}
+                >
+                  {monthlySummary.totalPnl > 0 ? '+' : ''}$
+                  {monthlySummary.totalPnl.toFixed(2)}
+                </span>
+              </div>
             </div>
           </div>
 
